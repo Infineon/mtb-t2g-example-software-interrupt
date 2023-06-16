@@ -605,7 +605,7 @@
                     </Personality>
                 </Block>
                 <Block location="tcpwm[0].group[0].cnt[1]">
-                    <Alias value="TCPWM_PWM"/>
+                    <Alias value="TCPWM_COUNTER"/>
                     <Personality template="mxs40timercounter_ver2" version="1.0">
                         <Param id="ClockPrescaler" value="CY_TCPWM_COUNTER_PRESCALER_DIVBY_1"/>
                         <Param id="RunMode" value="CY_TCPWM_COUNTER_ONESHOT"/>

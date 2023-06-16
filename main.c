@@ -24,6 +24,7 @@
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  *********************************************************************************************************************/
+
 /*********************************************************************************************************************/
 /*-----------------------------------------------------Includes------------------------------------------------------*/
 /*********************************************************************************************************************/
@@ -36,15 +37,11 @@
 /*********************************************************************************************************************/
 /*------------------------------------------------------Macros-------------------------------------------------------*/
 /*********************************************************************************************************************/
-/* Configuration for timer instance 0, Group 0, Counter 1 and used interrupt */
+/* Interrupt source to be triggered by software */
 #define TCPWM_INTR_SOURCE  CY_TCPWM_INT_ON_TC
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
-/*********************************************************************************************************************/
-
-/*********************************************************************************************************************/
-/*--------------------------------------------Private Variables/Constants--------------------------------------------*/
 /*********************************************************************************************************************/
 /* Peripheral interrupt configuration structure */
 const cy_stc_sysint_t IRQ_CFG_PERIPHERAL =
@@ -60,21 +57,21 @@ const cy_stc_sysint_t IRQ_CFG_PERIPHERAL =
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
-
 /**********************************************************************************************************************
  * Function Name: handle_Counter_Interrupt_0
  * Summary:
- *  This function implements the interrupt handler, which is called by a peripheral based software triggered interrupt.
+ *  This is the interrupt handler for a counter generated interrupt processing.
  * Parameters:
  *  none
- * Retrun:
- *  none
+ * Return:
+ *  void
  **********************************************************************************************************************
  */
 void handle_Counter_Interrupt_0(void)
 {
-     /* Clear TCPWM TC interrupt flag */
-    Cy_TCPWM_ClearInterrupt(TCPWM_PWM_HW, TCPWM_PWM_NUM, TCPWM_INTR_SOURCE);
+    /* Clear TCPWM TC interrupt flag */
+    Cy_TCPWM_ClearInterrupt(TCPWM_COUNTER_HW, TCPWM_COUNTER_NUM, TCPWM_INTR_SOURCE);
+
     /* Toggle the USER LED state */
     cyhal_gpio_toggle(CYBSP_USER_LED2);
 }
@@ -82,26 +79,33 @@ void handle_Counter_Interrupt_0(void)
 /**********************************************************************************************************************
  * Function Name: init_Timer_Interrupt
  * Summary:
- *  This function sets up and initializes the TCPWM0 group 0 counter 1 timer and enables software to set the terminal
- *  count interrupt.
+ *  This is the initializing function for timer setup.
  * Parameters:
  *  none
- * Retrun:
- *  none
+ * Return:
+ *  void
  **********************************************************************************************************************
  */
 static void init_Timer_Interrupt(void)
 {
     /* Initialize TCPWM0_GRP0_COUNTER 1 as Counter */
-    CY_ASSERT(Cy_TCPWM_Counter_Init(TCPWM_PWM_HW,TCPWM_PWM_NUM, &TCPWM_PWM_config) == CY_TCPWM_SUCCESS);
+    if (Cy_TCPWM_Counter_Init(TCPWM_COUNTER_HW,TCPWM_COUNTER_NUM, &TCPWM_COUNTER_config) != CY_TCPWM_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
+
     /* Enable TCPWM0_GRP0_COUNTER 1 */
-    Cy_TCPWM_Counter_Enable(TCPWM_PWM_HW, TCPWM_PWM_NUM);
+    Cy_TCPWM_Counter_Enable(TCPWM_COUNTER_HW, TCPWM_COUNTER_NUM);
 
     /* Enable desired interrupt for the counter */
-    Cy_TCPWM_SetInterruptMask(TCPWM_PWM_HW, TCPWM_PWM_NUM, TCPWM_INTR_SOURCE);
+    Cy_TCPWM_SetInterruptMask(TCPWM_COUNTER_HW, TCPWM_COUNTER_NUM, TCPWM_INTR_SOURCE);
 
     /*  Setting up the peripheral interrupt */
-    CY_ASSERT(Cy_SysInt_Init(&IRQ_CFG_PERIPHERAL, handle_Counter_Interrupt_0) == CY_SYSINT_SUCCESS);
+    if (Cy_SysInt_Init(&IRQ_CFG_PERIPHERAL, handle_Counter_Interrupt_0) != CY_SYSINT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
+
     /* Enable the peripheral interrupt mapped to NVICMux5 */
     NVIC_EnableIRQ(NvicMux5_IRQn);
 }
@@ -112,37 +116,37 @@ static void init_Timer_Interrupt(void)
  *  This is the main function.
  * Parameters:
  *  none
- * Retrun:
- *  none
+ * Return:
+ *  int
  **********************************************************************************************************************
  */
 int main(void)
 {
-    uint8_t uartReadValue;      /* Variable for storing character read from terminal */
-
-#if defined (CY_DEVICE_SECURE)
-    cyhal_wdt_t wdt_obj;
-
-    /* Clear watchdog timer so that it doesn't trigger a reset */
-    CY_ASSERT(cyhal_wdt_init(&wdt_obj, cyhal_wdt_get_max_timeout_ms()) == CY_RSLT_SUCCESS);
-    cyhal_wdt_free(&wdt_obj);
-#endif
+	/* Variable for storing character read from terminal */
+    uint8_t uartReadValue;
 
     /* Initialize the device and board peripherals */
-    CY_ASSERT(cybsp_init() == CY_RSLT_SUCCESS);
+    if (cybsp_init() != CY_RSLT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
 
     /* Enable global interrupts */
     __enable_irq();
 
     /* Initialize retarget-io to use the debug UART port */
-    CY_ASSERT(cy_retarget_io_init(CYBSP_DEBUG_UART_TX, CYBSP_DEBUG_UART_RX,
-                                  CY_RETARGET_IO_BAUDRATE) == CY_RSLT_SUCCESS);
+    if (cy_retarget_io_init(CYBSP_DEBUG_UART_TX, CYBSP_DEBUG_UART_RX,
+                                  CY_RETARGET_IO_BAUDRATE) != CY_RSLT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
 
-    /* Initialize the User LED 1 and 2 */
-    CY_ASSERT(cyhal_gpio_init(CYBSP_USER_LED1, CYHAL_GPIO_DIR_OUTPUT,
-                              CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF) == CY_RSLT_SUCCESS);
-    CY_ASSERT(cyhal_gpio_init(CYBSP_USER_LED2, CYHAL_GPIO_DIR_OUTPUT,
-                              CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF) == CY_RSLT_SUCCESS);
+    /* Initialize the User LED 2 */
+    if (cyhal_gpio_init(CYBSP_USER_LED2, CYHAL_GPIO_DIR_OUTPUT,
+                              CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF) != CY_RSLT_SUCCESS)
+    {
+        CY_ASSERT(0);
+    }
 
     /* Initialize TCPWM based software interrupts */
     init_Timer_Interrupt();
@@ -164,10 +168,9 @@ int main(void)
             if (uartReadValue == 'p')
             {
                 /* Set Interrupt for configured timer resource by software */
-                Cy_TCPWM_SetInterrupt(TCPWM_PWM_HW, TCPWM_PWM_NUM, TCPWM_INTR_SOURCE);
+                Cy_TCPWM_SetInterrupt(TCPWM_COUNTER_HW, TCPWM_COUNTER_NUM, TCPWM_INTR_SOURCE);
             }
         }
     }
 }
-
 /* [] END OF FILE */

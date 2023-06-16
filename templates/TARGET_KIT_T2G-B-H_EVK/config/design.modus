@@ -375,6 +375,7 @@
                     <Personality template="fll" version="4.0">
                         <Param id="configuration" value="auto"/>
                         <Param id="desiredFrequency" value="50.000"/>
+                        <Param id="enableOutputDivider" value="false"/>
                     </Personality>
                 </Block>
                 <Block location="srss[0].clock[0].hfclk[0]">
@@ -542,7 +543,7 @@
                     </Personality>
                 </Block>
                 <Block location="tcpwm[0].group[0].cnt[1]">
-                    <Alias value="TCPWM_PWM"/>
+                    <Alias value="TCPWM_COUNTER"/>
                     <Personality template="mxs40timercounter_ver2" version="1.0">
                         <Param id="ClockPrescaler" value="CY_TCPWM_COUNTER_PRESCALER_DIVBY_1"/>
                         <Param id="RunMode" value="CY_TCPWM_COUNTER_ONESHOT"/>
